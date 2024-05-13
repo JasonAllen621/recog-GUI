@@ -1,0 +1,6 @@
+cargo
+fishing
+passenger
+tanker
+tug or towing
+container

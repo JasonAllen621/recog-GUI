@@ -5,7 +5,7 @@
 
 
 import sys
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from ui_thread import InitForm
 
 

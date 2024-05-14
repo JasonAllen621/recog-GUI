@@ -11,8 +11,8 @@ model_record_list = []
 class object_recog(QObject):
     class_n_prob_signal_send = pyqtSignal(list)
 
-    net_model_signal_recieve = pyqtSignal(int)
-    device_n_image_signal_receive = pyqtSignal(list, bool)
+    net_id_signal_recieve = pyqtSignal(int)
+    recog_image_signal_receive = pyqtSignal(list)
 
     def __init__(self):
         super(object_recog, self).__init__()

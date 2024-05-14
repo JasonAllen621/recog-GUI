@@ -1,9 +1,8 @@
-from ui.ui_object_recog_demo import Ui_object_recog_demo
+# from ui.ui_object_recog_demo_record import Ui_object_recog_demo
+from ui.object_recog_demo_v1_6 import Ui_object_recog_demo
 from PyQt5.QtWidgets import QWidget, QFileDialog, QGraphicsScene, QButtonGroup, QGraphicsPixmapItem, QTextEdit, QGraphicsView
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import QThread
-
-from torch import version, cuda
 
 from recog_thread import object_recog
 from img_concat_thread import img_concat
@@ -14,34 +13,21 @@ class InitForm(QWidget):
         super().__init__()
         self.ui = Ui_object_recog_demo()
         self.ui.setupUi(self)
-        self.setWindowTitle("目标识别Demo")
+        # self.setWindowTitle("目标识别Demo")
 
         self.net_id = 0  # 默认网络为0号网络
         self.img_list = [[[0]]]
-        self.cuda_version = None
-        self.gpu_cal_available = False
-        self.cuda_available = cuda.is_available()
 
         # 如果点击了选择文件按钮，并且选择文件的函数运行完毕后则改变为1，
         # 在识别完毕后转为0
         self.recog_flag = False
-        self.cuda_flag = False
 
         # print("主线程id:", current_thread().ident)
         self.thread_recog_init()
         self.thread_concat_img_init()
-        self.gpu_available_judge()
 
-        self.button_group = QButtonGroup(self)
-        self.button_group.addButton(self.ui.radioButton_cpu)
-        self.button_group.addButton(self.ui.radioButton_cuda)
-        self.ui.radioButton_cpu.setChecked(True)  # 设置默认选项
-
-        self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)  # 设置刷新模式为自动刷新
-        self.scene = QGraphicsScene()  # 创建画布
-        self.ui.graphicsView.setScene(self.scene)  # 把画布添加到窗口
-        self.ui.graphicsView.show()
-        # self.ui.graphicsView 大小549*374
+        self.graphic_view_init()
+        self.set_logo_init()
 
         self.ui.textBrowser_class.setLineWrapMode(QTextEdit.NoWrap)
         self.ui.textBrowser_class_prob.setLineWrapMode(QTextEdit.NoWrap)
@@ -49,8 +35,6 @@ class InitForm(QWidget):
         self.ui.comboBox.addItems(["RESNEXT50", "DENSENET121", "REGNETY16GF"])
         self.ui.comboBox.currentIndexChanged[int].connect(self.net_architecture)  # 条目发生改变，发射信号，传递条目内容
 
-        self.ui.radioButton_cuda.clicked.connect(self.handle_cuda_button_clicked)
-        self.ui.radioButton_cpu.clicked.connect(self.handle_cuda_button_clicked)
         self.ui.pushButton_select_file.clicked.connect(self.select_file_path)
         self.ui.pushButton_start_recog.clicked.connect(self.start_recog)
 
@@ -59,9 +43,9 @@ class InitForm(QWidget):
         self.recog_thread = QThread()
         self.recog = object_recog()
         self.recog.moveToThread(self.recog_thread)
-        self.recog.device_n_image_signal_receive.connect(self.recog.recog)
+        self.recog.recog_image_signal_receive.connect(self.recog.recog)
         self.recog.class_n_prob_signal_send.connect(self.get_class_n_prob)
-        self.recog.net_model_signal_recieve.connect(self.recog.net_select)
+        self.recog.net_id_signal_recieve.connect(self.recog.net_select)
 
     def thread_concat_img_init(self):
         self.concat_img_thread = QThread()
@@ -71,38 +55,23 @@ class InitForm(QWidget):
         self.concat_img.concatimg_signal_send.connect(self.loadImage)
         self.concat_img.imglist_path_signal_recieve.connect(self.concat_img.concat_images)
 
-    def gpu_available_judge(self):
-        if self.cuda_available:
-            self.cuda_version = version.cuda
-            if self.cuda_version == "11.8":
-                self.ui.label_cuda_available_version.setText(
-                    "已安装CUDA，版本为11.8，GPU运算可用"
-                )
-                self.ui.radioButton_cuda.setEnabled(True)
-                self.ui.label_cuda_available_version.setStyleSheet("color: green;")
-                self.gpu_cal_available = True
-            else:
-                self.ui.label_cuda_available_version.setText(
-                    "已安装CUDA，版本为{}，指定CUDA版本11.8，GPU运算不可用".format(self.cuda_version)
-                )
-                self.ui.label_cuda_available_version.setStyleSheet("color: yellow;")
-                self.ui.radioButton_cuda.setEnabled(False)
-        else:
-            self.ui.label_cuda_available_version.setText(
-                "未安装CUDA，不可使用GPU运算"
-            )
-            self.ui.label_cuda_available_version.setStyleSheet("color: red;")
-            self.ui.radioButton_cuda.setEnabled(False)
+    #ui初始化
+    def graphic_view_init(self):
+        self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)  # 设置刷新模式为自动刷新
+        self.scene = QGraphicsScene()  # 创建画布
+        self.ui.graphicsView.setScene(self.scene)  # 把画布添加到窗口
+        self.ui.graphicsView.show()
+        # self.ui.graphicsView 大小500*600
+
+    def set_logo_init(self):
+        logo = QPixmap("./ui/logo_gray.jpeg")
+        proportion = logo.height() / self.ui.logo_show.height()
+        logo.setDevicePixelRatio(proportion)
+        self.ui.logo_show.setPixmap(logo)
 
     # 修改各种状态量
     def net_architecture(self, i):
         self.net_id = i
-
-    def handle_cuda_button_clicked(self):
-        if self.ui.radioButton_cuda.isChecked() & self.gpu_cal_available:
-            self.cuda_flag = True
-        else:
-            self.cuda_flag = False
 
     # 选择文件并显示
     def select_file_path(self):
@@ -139,8 +108,8 @@ class InitForm(QWidget):
     def start_recog(self):
         if self.recog_flag:
             self.recog_thread.start()
-            self.recog.net_model_signal_recieve.emit(self.net_id)
-            self.recog.device_n_image_signal_receive.emit(self.img_list, self.cuda_flag)
+            self.recog.net_id_signal_recieve.emit(self.net_id)
+            self.recog.recog_image_signal_receive.emit(self.img_list)
             self.ui.pushButton_start_recog.setEnabled(False)
             self.ui.pushButton_select_file.setEnabled(False)
             self.ui.label_recog_state.setText("识别中……")

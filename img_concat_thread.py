@@ -26,6 +26,10 @@ class img_concat(QObject):
         list_len = len(image_names)
         COL = math.ceil(math.sqrt(list_len))
         ROW = round(list_len/COL)
+        print(COL, ROW)
+        if COL * ROW > 16:
+            COL = 4
+            ROW = 4
         # COL = 4  # 指定拼接图片的列数
         # ROW = 4  # 指定拼接图片的行数
         UNIT_HEIGHT_SIZE = 0  # 图片高度
@@ -59,7 +63,7 @@ class img_concat(QObject):
                     concat_image.paste(pad_img, (0 + self.set_size * col, 0 + self.set_size * row))
                 else:
                     break
-        concat_image.thumbnail((549, 374), Image.ANTIALIAS)
+        concat_image.thumbnail((500, 600), Image.ANTIALIAS)
         # return concat_image
         self.concatimg_signal_send.emit(concat_image, self.image_list)
 

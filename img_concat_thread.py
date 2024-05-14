@@ -3,7 +3,7 @@ from PyQt5.QtCore import pyqtSignal, QObject
 import math
 
 class img_concat(QObject):
-    imglist_path_signal_recieve = pyqtSignal(object)
+    imglist_path_signal_recieve = pyqtSignal(object, tuple)
     concatimg_signal_send = pyqtSignal(Image.Image, list)
 
     def __init__(self):
@@ -22,11 +22,10 @@ class img_concat(QObject):
         padded_image = ImageOps.expand(img, border=(left, top, right, bottom), fill='white')
         return padded_image
 
-    def concat_images(self, image_names):
+    def concat_images(self, image_names, final_size):
         list_len = len(image_names)
         COL = math.ceil(math.sqrt(list_len))
         ROW = round(list_len/COL)
-        print(COL, ROW)
         if COL * ROW > 16:
             COL = 4
             ROW = 4
@@ -63,7 +62,7 @@ class img_concat(QObject):
                     concat_image.paste(pad_img, (0 + self.set_size * col, 0 + self.set_size * row))
                 else:
                     break
-        concat_image.thumbnail((500, 600), Image.ANTIALIAS)
+        concat_image.thumbnail(final_size, Image.ANTIALIAS)
         # return concat_image
         self.concatimg_signal_send.emit(concat_image, self.image_list)
 

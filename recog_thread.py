@@ -5,19 +5,23 @@ import os
 from PyQt5.QtCore import pyqtSignal, QObject
 from model.model import net_cllect, parent_path
 
-net_list = ["RESNEXT50", "DENSENET121", "REGNETY16GF"]
+# net_list = ["RESNEXT50", "DENSENET121", "REGNETY16GF"]
+net_list = {
+    "OPT": ["RESNEXT50", "DENSENET121", "REGNETY16GF"],
+    "SAR": ["RESNEXT50", "DENSENET121", "REGNETY16GF"]
+}
 model_record_list = []
 
 class object_recog(QObject):
     class_n_prob_signal_send = pyqtSignal(list)
 
-    net_id_signal_recieve = pyqtSignal(int)
+    net_id_signal_recieve = pyqtSignal(str, int)
     recog_image_signal_receive = pyqtSignal(list)
 
     def __init__(self):
         super(object_recog, self).__init__()
         self.net = net_cllect("RESNEXT50")
-        self.net_id = 0
+        self.net_id = ["OPT", 0]
 
         self.transform = transforms.Compose([
         transforms.Resize((128, 128)),
@@ -27,12 +31,13 @@ class object_recog(QObject):
         with open(os.path.join(parent_path, r'ship_classes.txt')) as f:
             self.classes = [line.strip() for line in f.readlines()]
 
-    def net_select(self, i):
-        if self.net_id == i:
+    def net_select(self, source, i):
+        if self.net_id == [source, i]:
             pass
         else:
-            self.net_id = i
-            self.net = net_cllect(net_list[i])
+            self.net = net_cllect(net_list[source][i])
+            self.net_id = [source, i]
+        print(self.net_id)
             # self.net.load_state_dict(torch.load())
 
     def trans_pretreat(self, img_list):

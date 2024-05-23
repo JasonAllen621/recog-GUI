@@ -83,21 +83,31 @@ class InitForm(QWidget):
         # chatgpt
         # 点击选择文件的按钮之后，弹出选择路径窗口，选择文件
         options = QFileDialog.Options()
-        self.imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
-                                                                  "选择文件", "", "Image(*.jpg *.jpeg *.png *.bmp)",
-                                                                  options=options)
-        list_len = len(self.imgName_list)
+        if self.func_id == 0:
+            imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
+                                                                      "选择文件", "", "图像(*.jpg *.jpeg *.png *.bmp)",
+                                                                      options=options)
+            list_len = len(imgName_list)
 
-        if list_len < 1:
-            self.ui.label_show_path.setText("未选中文件")
-            self.ui.label_show_path.setStyleSheet("color:red;")
-        else:
-            if list_len > 1:
-                self.ui.label_show_path.setText(self.imgName_list[0] + "等{}个文件".format(len(self.imgName_list)))
+            if list_len < 1:
+                self.ui.label_show_path.setText("未选中文件")
+                self.ui.label_show_path.setStyleSheet("color:red;")
             else:
-                self.ui.label_show_path.setText(self.imgName_list[0])
-            self.ui.label_show_path.setStyleSheet("color:black;")
-            self.concat_img.imglist_path_signal_recieve.emit(self.imgName_list, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
+                if list_len > 1:
+                    self.ui.label_show_path.setText(imgName_list[0] + "等{}个文件".format(len(imgName_list)))
+                else:
+                    self.ui.label_show_path.setText(imgName_list[0])
+                self.ui.label_show_path.setStyleSheet("color:black;")
+                self.concat_img.imglist_path_signal_recieve.emit(imgName_list, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
+        elif self.func_id == 1:
+            imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
+                                                                 "选择文件", "", "表格文件(*.csv)",
+                                                                 options=options)
+            if len(imgName_list) != 0:
+                self.ui.label_show_path.setText(f"{imgName_list[0]}")
+            else:
+                self.ui.label_show_path.setText("未选中文件")
+                self.ui.label_show_path.setStyleSheet("color:red;")
 
     def loadImage(self, concatimg, img_list):
         self.func_list[self.func_id].img_list = img_list
@@ -114,7 +124,7 @@ class InitForm(QWidget):
         return pixmap
 
     def closeEvent(self, event):
-        pass
+        # pass
         self.concat_img_thread.quit()
         self.recog_subwidget.recog_thread.quit()
         # print("窗体关闭")

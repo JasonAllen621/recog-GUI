@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>532</width>
+    <width>529</width>
     <height>396</height>
    </rect>
   </property>
@@ -29,6 +29,98 @@
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_IR_related_func">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="pushButton_read_img_root_path">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>3</horstretch>
+          <verstretch>1</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>75</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>120</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>Agency FB</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>选择图像路径</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Preferred</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>15</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_show_img_root_path">
+        <property name="minimumSize">
+         <size>
+          <width>256</width>
+          <height>25</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>512</width>
+          <height>50</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>宋体</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>读取图像路径</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Preferred</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>5</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
@@ -68,7 +160,7 @@
          </font>
         </property>
         <property name="text">
-         <string>设置背景</string>
+         <string>设置参数</string>
         </property>
        </widget>
       </item>
@@ -142,13 +234,13 @@
       <property name="minimumSize">
        <size>
         <width>515</width>
-        <height>25</height>
+        <height>50</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>1030</width>
-        <height>50</height>
+        <height>100</height>
        </size>
       </property>
       <property name="font">
@@ -158,25 +250,9 @@
        </font>
       </property>
       <property name="text">
-       <string>STATE</string>
+       <string>参数状态</string>
       </property>
      </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Preferred</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>20</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -228,13 +304,7 @@
        </spacer>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_show_path">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>5</horstretch>
-          <verstretch>1</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="QLabel" name="label_show_save_path">
         <property name="minimumSize">
          <size>
           <width>256</width>
@@ -246,6 +316,15 @@
           <width>512</width>
           <height>50</height>
          </size>
+        </property>
+        <property name="font">
+         <font>
+          <family>宋体</family>
+          <pointsize>11</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>保存路径</string>
         </property>
        </widget>
       </item>
@@ -343,7 +422,7 @@
          </font>
         </property>
         <property name="text">
-         <string>STATE</string>
+         <string>识别状态</string>
         </property>
        </widget>
       </item>
@@ -360,13 +439,13 @@
       <property name="minimumSize">
        <size>
         <width>515</width>
-        <height>25</height>
+        <height>20</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>1030</width>
-        <height>50</height>
+        <height>40</height>
        </size>
       </property>
       <property name="font">
@@ -394,13 +473,13 @@
       <property name="minimumSize">
        <size>
         <width>515</width>
-        <height>180</height>
+        <height>150</height>
        </size>
       </property>
       <property name="maximumSize">
        <size>
         <width>1030</width>
-        <height>320</height>
+        <height>300</height>
        </size>
       </property>
       <property name="font">

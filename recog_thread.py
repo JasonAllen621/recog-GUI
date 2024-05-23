@@ -37,7 +37,7 @@ class object_recog(QObject):
         else:
             self.net = net_cllect(net_list[source][i])
             self.net_id = [source, i]
-        print(self.net_id)
+        # print(self.net_id)
             # self.net.load_state_dict(torch.load())
 
     def trans_pretreat(self, img_list):

@@ -16,6 +16,12 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>120</width>
+    <height>0</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -41,7 +47,7 @@
         </property>
         <property name="minimumSize">
          <size>
-          <width>75</width>
+          <width>120</width>
           <height>25</height>
          </size>
         </property>

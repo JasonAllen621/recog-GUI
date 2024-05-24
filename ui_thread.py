@@ -44,7 +44,8 @@ class InitForm(QWidget):
         self.concat_img.moveToThread(self.concat_img_thread)
         self.concat_img_thread.start()
         self.concat_img.concatimg_signal_send.connect(self.loadImage)
-        self.concat_img.imglist_path_signal_recieve.connect(self.concat_img.concat_images)
+        self.concat_img.recog_imglist_path_signal_recieve.connect(self.concat_img.concat_images)
+        self.concat_img.IR_imglist_path_signal_recieve.connect(self.concat_img.IR_imgpath_process)
 
     # ui初始化
     # 主窗口相关内容初始化
@@ -98,16 +99,18 @@ class InitForm(QWidget):
                 else:
                     self.ui.label_show_path.setText(imgName_list[0])
                 self.ui.label_show_path.setStyleSheet("color:black;")
-                self.concat_img.imglist_path_signal_recieve.emit(imgName_list, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
+                self.concat_img.recog_imglist_path_signal_recieve.emit(imgName_list, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
         elif self.func_id == 1:
-            imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
-                                                                 "选择文件", "", "表格文件(*.csv)",
-                                                                 options=options)
-            if len(imgName_list) != 0:
-                self.ui.label_show_path.setText(f"{imgName_list[0]}")
+            directory = QFileDialog.getExistingDirectory(None, "选取文件夹", r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/", options=options)  # 起始路径
+            if len(directory) > 0:
+                self.ui.label_show_path.setText(directory)
+                self.ui.label_show_path.setStyleSheet("color:black;")
+                self.IR_related_subwidget.img_read_root_path = directory
+                self.concat_img.IR_imglist_path_signal_recieve.emit(directory, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
             else:
-                self.ui.label_show_path.setText("未选中文件")
+                self.ui.label_show_path.setText("未选中文件夹")
                 self.ui.label_show_path.setStyleSheet("color:red;")
+
 
     def loadImage(self, concatimg, img_list):
         self.func_list[self.func_id].img_list = img_list

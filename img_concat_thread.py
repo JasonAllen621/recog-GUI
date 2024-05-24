@@ -1,10 +1,13 @@
+import os.path
+
 from PIL import Image, ImageOps
 from PyQt5.QtCore import pyqtSignal, QObject
 import math
 
 class img_concat(QObject):
-    imglist_path_signal_recieve = pyqtSignal(object, tuple)
+    recog_imglist_path_signal_recieve = pyqtSignal(object, tuple)
     concatimg_signal_send = pyqtSignal(Image.Image, list)
+    IR_imglist_path_signal_recieve = pyqtSignal(str, tuple)
 
     def __init__(self):
         super(img_concat, self).__init__()
@@ -22,6 +25,15 @@ class img_concat(QObject):
         padded_image = ImageOps.expand(img, border=(left, top, right, bottom), fill='white')
         return padded_image
 
+    def IR_imgpath_process(self, root_path, final_size):
+        img_path = os.path.join(root_path, "images")
+        mask_path = os.path.join(root_path, "labels")
+        img_path_select_list = os.listdir(img_path)[-1002:-1000]
+        img_path_select_list = [os.path.join(img_path, i) for i in img_path_select_list]
+        mask_path_select_list = os.listdir(mask_path)[-1002:-1000]
+        mask_path_select_list = [os.path.join(mask_path, i) for i in mask_path_select_list]
+        self.concat_images(img_path_select_list + mask_path_select_list, final_size)
+
     def concat_images(self, image_names, final_size):
         list_len = len(image_names)
         COL = math.ceil(math.sqrt(list_len))
@@ -37,7 +49,8 @@ class img_concat(QObject):
         max_UNIT_WIDTH_SIZE = 0
         self.image_list = []
         for index in range(len(image_names)):
-            self.image_list.append(Image.open(image_names[index]).convert("RGB"))  # 读取所有用于拼接的图片
+            # self.image_list.append(Image.open(image_names[index]).convert("RGB"))  # 读取所有用于拼接的图片
+            self.image_list.append(Image.open(image_names[index]))  # 读取所有用于拼接的图片
             UNIT_WIDTH_SIZE = self.image_list[index].width
             UNIT_HEIGHT_SIZE = self.image_list[index].height
 

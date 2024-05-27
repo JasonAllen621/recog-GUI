@@ -2,9 +2,10 @@ from ui.main_widght import Ui_main_widget
 from ui.IR_releated_subwidget_instance import IR_related_subwidget_class
 from ui.recog_subwidget_instance import recog_subwidget_class
 from PyQt5.QtWidgets import QWidget, QFileDialog, QGraphicsScene, QButtonGroup, QGraphicsPixmapItem, QTextEdit, QGraphicsView, QStackedLayout
-from PyQt5.QtGui import QPixmap, QImage
-from PyQt5.QtCore import QThread
+from PyQt5.QtGui import QPixmap, QImage, QPainter
+from PyQt5.QtCore import QThread, Qt
 from img_concat_thread import img_concat
+
 
 
 class InitForm(QWidget):
@@ -17,9 +18,7 @@ class InitForm(QWidget):
 
         # print("主线程id:", current_thread().ident)
         self.thread_concat_img_init()
-
         self.param_init()
-
         # 主窗口初始化
         self.graphic_view_init()
         self.set_logo_init()
@@ -28,6 +27,7 @@ class InitForm(QWidget):
         # 子窗口初始化
         self.ui.pushButton_select_file.clicked.connect(self.select_file_path)
         self.ui.pushButton_change_func.clicked.connect(self.change_func)
+        # print(self.children())
 
     # 参数初始化
     def param_init(self):
@@ -39,19 +39,24 @@ class InitForm(QWidget):
 
     # 初始化线程
     def thread_concat_img_init(self):
-        self.concat_img_thread = QThread()
+        # self.concat_img_thread = QThread()
         self.concat_img = img_concat()
-        self.concat_img.moveToThread(self.concat_img_thread)
-        self.concat_img_thread.start()
+        self.concat_img.setParent(self)
+        # self.concat_img.moveToThread(self.concat_img_thread)
+        # self.concat_img_thread.start()
         self.concat_img.concatimg_signal_send.connect(self.loadImage)
-        self.concat_img.recog_imglist_path_signal_recieve.connect(self.concat_img.concat_images)
+        self.concat_img.recog_imglist_path_signal_recieve.connect(self.concat_img.recog_concat_images)
         self.concat_img.IR_imglist_path_signal_recieve.connect(self.concat_img.IR_imgpath_process)
+
 
     # ui初始化
     # 主窗口相关内容初始化
     def stacked_ui_init(self):
         self.recog_subwidget = recog_subwidget_class()
+        # self.recog_subwidget.setParent(self)
         self.IR_related_subwidget = IR_related_subwidget_class()
+        # self.recog_subwidget.setParent(self)
+        self.IR_related_subwidget.process_func.processed_IR_imgs_signal_send.connect(self.concat_img.processed_IR_imgs_concat_images)
         self.func_list = [self.recog_subwidget, self.IR_related_subwidget]
         self.frame = QStackedLayout(self.ui.frame)
         self.frame.addWidget(self.recog_subwidget)
@@ -63,6 +68,14 @@ class InitForm(QWidget):
         self.scene = QGraphicsScene()  # 创建画布
         self.ui.graphicsView.setScene(self.scene)  # 把画布添加到窗口
         self.ui.graphicsView.show()
+        self.ui.graphicsView.setRenderHint(QPainter.Antialiasing)  # 可选，抗锯齿渲染
+        self.ui.graphicsView.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.ui.graphicsView.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)  # 在鼠标位置缩放
+        self.ui.graphicsView.setResizeAnchor(QGraphicsView.AnchorUnderMouse)  # 在鼠标位置缩放
+        # self.ui.graphicsView.setWheelModifiers(Qt.ControlModifier)  # 使用 Ctrl + 鼠标滚轮进行缩放
+        self.ui.graphicsView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.graphicsView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.graphicsView.wheelEvent = self.graphicview_wheel_Event
         # self.ui.graphicsView 大小500*600
 
     def set_logo_init(self):
@@ -70,6 +83,21 @@ class InitForm(QWidget):
         proportion = logo.height() / self.ui.logo_show.height()
         logo.setDevicePixelRatio(proportion)
         self.ui.logo_show.setPixmap(logo)
+
+    def graphicview_wheel_Event(self, event):
+        # https://blog.csdn.net/qq_60947873/article/details/126321522
+        if event.modifiers() == Qt.ControlModifier:
+            delta = event.angleDelta().y() / 120
+            zoom_factor = 1.2 ** delta
+            self.ui.graphicsView.scale(zoom_factor, zoom_factor)
+        else:
+            super().wheelEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Plus:  # 按 "+" 键放大图像
+            self.ui.graphicsView.scale(1.2, 1.2)
+        elif event.key() == Qt.Key_Minus:  # 按 "-" 键缩小图像
+            self.ui.graphicsView.scale(0.8, 0.8)
 
     # 改变子窗口功能
     def change_func(self):
@@ -99,14 +127,15 @@ class InitForm(QWidget):
                 else:
                     self.ui.label_show_path.setText(imgName_list[0])
                 self.ui.label_show_path.setStyleSheet("color:black;")
-                self.concat_img.recog_imglist_path_signal_recieve.emit(imgName_list, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
+                self.concat_img.recog_imglist_path_signal_recieve.emit(imgName_list)
         elif self.func_id == 1:
             directory = QFileDialog.getExistingDirectory(None, "选取文件夹", r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/", options=options)  # 起始路径
             if len(directory) > 0:
                 self.ui.label_show_path.setText(directory)
                 self.ui.label_show_path.setStyleSheet("color:black;")
                 self.IR_related_subwidget.img_read_root_path = directory
-                self.concat_img.IR_imglist_path_signal_recieve.emit(directory, (self.ui.graphicsView.height(), self.ui.graphicsView.width()))
+                self.concat_img.IR_imglist_path_signal_recieve.emit(directory)
+                self.IR_related_subwidget.object_img_root_path_signal_recieve.emit(directory)
             else:
                 self.ui.label_show_path.setText("未选中文件夹")
                 self.ui.label_show_path.setStyleSheet("color:red;")
@@ -128,6 +157,6 @@ class InitForm(QWidget):
 
     def closeEvent(self, event):
         # pass
-        self.concat_img_thread.quit()
+        # self.concat_img_thread.quit()
         self.recog_subwidget.recog_thread.quit()
         # print("窗体关闭")

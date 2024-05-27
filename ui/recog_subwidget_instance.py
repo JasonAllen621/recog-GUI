@@ -19,6 +19,7 @@ class recog_subwidget_class(QWidget, Ui_recog_subwidget):
         self.recog_thread = QThread()
         self.recog = object_recog()
         self.recog.moveToThread(self.recog_thread)
+        self.recog_thread.start()
         self.recog.recog_image_signal_receive.connect(self.recog.recog)
         self.recog.class_n_prob_signal_send.connect(self.get_class_n_prob)
         self.recog.net_id_signal_recieve.connect(self.recog.net_select)
@@ -39,7 +40,6 @@ class recog_subwidget_class(QWidget, Ui_recog_subwidget):
     def start_recog(self):
         # print(type(self.buttonGroup_specify_source.checkedId()))
         if self.img_list != None:
-            self.recog_thread.start()
             self.recog.net_id_signal_recieve.emit(
                 source_list[-1 * (self.buttonGroup_specify_source.checkedId() + 2)],
                 self.net_id)
@@ -61,7 +61,6 @@ class recog_subwidget_class(QWidget, Ui_recog_subwidget):
         self.label_recog_state.setText("识别结束")
         self.pushButton_start_recog.setEnabled(True)
         # self.pushButton_select_file.setEnabled(True)
-        self.recog_thread.quit()
 
     def class_prob2text(self, class_n_prob):
         class_text = ''

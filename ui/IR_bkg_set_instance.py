@@ -3,7 +3,9 @@ from PyQt5.QtWidgets import QWidget, QFileDialog, QMessageBox
 from PIL import Image
 import os
 import time
+import cv2
 from PyQt5.QtCore import pyqtSignal
+import numpy as np
 
 value_range_record = {
     "sea": [5, 30],
@@ -15,7 +17,7 @@ value_range_record = {
 }
 
 class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
-    cfg_info_signal_send = pyqtSignal(int, dict)
+    cfg_info_signal_send = pyqtSignal(dict)
     def __init__(self):
         super(IR_bkg_set_class, self).__init__()
         self.setupUi(self)
@@ -61,21 +63,23 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
     def save_cfg(self):
         if self.radioButton_rand_set.isChecked():
             if self.rand_mode_path != None:
-                mode = 0
+                # mode = 0
                 cfg_dict = {
-                    "idx": [self.lineEdit_start_idx.text(), self.lineEdit_end_idx.text()],
+                    "mode": 0,
+                    "idx": [int(self.lineEdit_start_idx.text()), int(self.lineEdit_end_idx.text())],
                     "path": self.rand_mode_path
                 }
-                self.cfg_info_signal_send.emit(mode, cfg_dict)
+                self.cfg_info_signal_send.emit(cfg_dict)
                 time.sleep(0.5)
                 self.close()
             else:
                 QMessageBox.about(self, "提示", "未选中随机背景下图像路径")
         else:
-            mode = 1
+            # mode = 1
             if self.sea_path != None  and self.sky_path != None and self.clutter_path != None:
                 cfg_dict = {
-                    "idx": [self.lineEdit_start_idx.text(), self.lineEdit_end_idx.text()],
+                    "mode": 1,
+                    "idx": [int(self.lineEdit_start_idx.text()), int(self.lineEdit_end_idx.text())],
                     "sea": [self.sea_path, int(self.lineEdit_sea_intensity.text())],
                     "sky": [self.sky_path, int(self.lineEdit_sky_intensity.text())],
                     "clutter": [self.clutter_path]
@@ -87,7 +91,7 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
                 else:
                     cfg_dict["clutter"].append(int(self.lineEdit_building_intensity.text()))
 
-                self.cfg_info_signal_send.emit(mode, cfg_dict)
+                self.cfg_info_signal_send.emit(cfg_dict)
                 time.sleep(0.5)
                 self.close()
             else:
@@ -183,19 +187,22 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
         self.sea_path = self.select_file()
         if self.sea_path:
             img = Image.open(self.sea_path)
-            img.show()
+            cv2.imshow("海", cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR))
+            cv2.waitKey()
 
     def select_sky(self):
         self.sky_path = self.select_file()
         if self.sky_path:
             img = Image.open(self.sky_path)
-            img.show()
+            cv2.imshow("天", cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR))
+            cv2.waitKey()
 
     def select_clutter(self):
         self.clutter_path = self.select_file()
         if self.clutter_path:
             img = Image.open(self.clutter_path)
-            img.show()
+            cv2.imshow("其它", cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR))
+            cv2.waitKey()
 
     def read_sea_intensity_value(self):
         self.lineEdit_sea_intensity.setText(f"{self.horizontalSlider_sea_intensity.value()}")
@@ -231,12 +238,16 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
         value = self.lineEdit_start_idx.text()
         value = self.str_2_int("img_idx", value)
         if value:
+            if value > int(self.lineEdit_end_idx.text()):
+                value = int(self.lineEdit_end_idx.text())
             self.lineEdit_start_idx.setText(str(value))
 
     def set_img_end_idx(self):
         value = self.lineEdit_end_idx.text()
         value = self.str_2_int("img_idx", value)
         if value:
+            if value < int(self.lineEdit_start_idx.text()):
+                value = int(self.lineEdit_start_idx.text())
             self.lineEdit_end_idx.setText(str(value))
 
     def set_sea_slider_value(self):

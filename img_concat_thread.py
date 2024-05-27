@@ -5,13 +5,13 @@ from PyQt5.QtCore import pyqtSignal, QObject
 import math
 
 class img_concat(QObject):
-    recog_imglist_path_signal_recieve = pyqtSignal(object, tuple)
+    recog_imglist_path_signal_recieve = pyqtSignal(object)
     concatimg_signal_send = pyqtSignal(Image.Image, list)
-    IR_imglist_path_signal_recieve = pyqtSignal(str, tuple)
+    IR_imglist_path_signal_recieve = pyqtSignal(str)
 
     def __init__(self):
         super(img_concat, self).__init__()
-        self.image_list = []
+        pass
 
     def img_pad(self, img):
         (width, height) = img.size
@@ -25,19 +25,27 @@ class img_concat(QObject):
         padded_image = ImageOps.expand(img, border=(left, top, right, bottom), fill='white')
         return padded_image
 
-    def IR_imgpath_process(self, root_path, final_size):
+    def IR_imgpath_process(self, root_path):
         img_path = os.path.join(root_path, "images")
         mask_path = os.path.join(root_path, "labels")
         img_path_select_list = os.listdir(img_path)[-1002:-1000]
         img_path_select_list = [os.path.join(img_path, i) for i in img_path_select_list]
         mask_path_select_list = os.listdir(mask_path)[-1002:-1000]
         mask_path_select_list = [os.path.join(mask_path, i) for i in mask_path_select_list]
-        self.concat_images(img_path_select_list + mask_path_select_list, final_size)
+        image_list = [Image.open(path) for path in img_path_select_list + mask_path_select_list]
+        self.concat_images(image_list)
 
-    def concat_images(self, image_names, final_size):
-        list_len = len(image_names)
+    def processed_IR_imgs_concat_images(self, image_list):
+        self.concat_images(image_list)
+
+    def recog_concat_images(self, images_names):
+        images = [Image.open(path) for path in images_names]
+        self.concat_images(images)
+
+    def concat_images(self, image_list):
+        list_len = len(image_list)
         COL = math.ceil(math.sqrt(list_len))
-        ROW = round(list_len/COL)
+        ROW = math.ceil(list_len/COL)
         if COL * ROW > 16:
             COL = 4
             ROW = 4
@@ -47,12 +55,12 @@ class img_concat(QObject):
         UNIT_WIDTH_SIZE = 0  # 图片宽度
         max_UNIT_HEIGHT_SIZE = 0
         max_UNIT_WIDTH_SIZE = 0
-        self.image_list = []
-        for index in range(len(image_names)):
+        # self.image_list = []
+        for index in range(len(image_list)):
             # self.image_list.append(Image.open(image_names[index]).convert("RGB"))  # 读取所有用于拼接的图片
-            self.image_list.append(Image.open(image_names[index]))  # 读取所有用于拼接的图片
-            UNIT_WIDTH_SIZE = self.image_list[index].width
-            UNIT_HEIGHT_SIZE = self.image_list[index].height
+            # self.image_list.append(Image.open(image_names[index]))  # 读取所有用于拼接的图片
+            UNIT_WIDTH_SIZE = image_list[index].width
+            UNIT_HEIGHT_SIZE = image_list[index].height
 
             if UNIT_WIDTH_SIZE > max_UNIT_WIDTH_SIZE:
                 max_UNIT_WIDTH_SIZE = UNIT_WIDTH_SIZE
@@ -71,13 +79,13 @@ class img_concat(QObject):
                 # 或四元元组（指定复制位置的左上角和右下角坐标）
                 count = COL * row + col
                 if count <= list_len - 1:
-                    pad_img = self.img_pad(self.image_list[COL * row + col])
+                    pad_img = self.img_pad(image_list[COL * row + col])
                     concat_image.paste(pad_img, (0 + self.set_size * col, 0 + self.set_size * row))
                 else:
                     break
-        concat_image.thumbnail(final_size, Image.ANTIALIAS)
+        concat_image.thumbnail((self.parent().ui.graphicsView.height(), self.parent().ui.graphicsView.width()), Image.ANTIALIAS)
         # return concat_image
-        self.concatimg_signal_send.emit(concat_image, self.image_list)
+        self.concatimg_signal_send.emit(concat_image, image_list)
 
 
 

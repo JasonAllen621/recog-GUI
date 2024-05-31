@@ -4,12 +4,31 @@ from torch import nn, sort, unsqueeze
 import os
 from PyQt5.QtCore import pyqtSignal, QObject
 from model.model import net_cllect, parent_path
+import json
 
-# net_list = ["RESNEXT50", "DENSENET121", "REGNETY16GF"]
+
+
+with open("./model/classes.json", "r") as f:
+    classes_label_dict = json.load(f)
+
 net_list = {
-    "OPT": ["RESNEXT50", "DENSENET121", "REGNETY16GF"],
-    "SAR": ["RESNEXT50", "DENSENET121", "REGNETY16GF"]
+    "OPT": {
+        "net": ["RESNEXT50", "DENSENET121", "REGNETY16GF"],
+        # "path": [],
+        "label": len(classes_label_dict["OPT"])
+    },
+    "SAR": {
+        "net": ["RESNEXT50", "DENSENET121", "REGNETY16GF"],
+        # "path": [],
+        "label": len(classes_label_dict["SAR"])
+    },
+    "INFRAD": {
+        "net": ["DENSENET121"],
+        # "path": [],
+        "label": len(classes_label_dict["INFRAD"])
+    },
 }
+
 model_record_list = []
 
 class object_recog(QObject):
@@ -20,7 +39,7 @@ class object_recog(QObject):
 
     def __init__(self):
         super(object_recog, self).__init__()
-        self.net = net_cllect("RESNEXT50")
+        self.net = net_cllect("RESNEXT50", "test", net_list["OPT"]["label"])
         self.net_id = ["OPT", 0]
 
         self.transform = transforms.Compose([
@@ -28,14 +47,11 @@ class object_recog(QObject):
         transforms.ToTensor(),
     ])
 
-        with open(os.path.join(parent_path, r'ship_classes.txt')) as f:
-            self.classes = [line.strip() for line in f.readlines()]
-
     def net_select(self, source, i):
         if self.net_id == [source, i]:
             pass
         else:
-            self.net = net_cllect(net_list[source][i])
+            self.net = net_cllect(net_list[source]["net"][i], "test", net_list[source]["label"])
             self.net_id = [source, i]
         # print(self.net_id)
             # self.net.load_state_dict(torch.load())
@@ -63,11 +79,11 @@ class object_recog(QObject):
             percentage = nn.functional.softmax(i, dim=1)[0] * 100
 
             if a.shape[0] == 1:
-                class_n_prob = [(self.classes[idx], percentage[idx].item()) for idx in indices[0][:2]]
+                class_n_prob = [(classes_label_dict[self.net_id[0]][idx], percentage[idx].item()) for idx in indices[0][:2]]
                 # print(class_n_prob)
             else:
                 idx = indices[0][0]
-                class_n_prob.append((self.classes[idx], percentage[idx].item()))
+                class_n_prob.append((classes_label_dict[self.net_id[0]][idx], percentage[idx].item()))
                 # print(class_n_prob)
 
         # print(class_n_prob)

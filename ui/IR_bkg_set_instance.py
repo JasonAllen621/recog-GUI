@@ -13,8 +13,11 @@ value_range_record = {
     "ice": [1, 5],
     "land": [15, 60],
     "building": [20, 70],
-    "img_idx": [1, 97200]
+    "start_idx": [1, 97200],
+    "end_idx": [1, 97200]
 }
+
+bkg_certain_dirs = ["clutter", "sea", "sky"]
 
 class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
     cfg_info_signal_send = pyqtSignal(dict)
@@ -29,6 +32,22 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
         self.sky_path = None
         self.clutter_path = None
         self.rand_mode_path = None
+        self.real_time_value_record = {
+            "sea": int(self.lineEdit_sea_intensity.text()),
+            "sky": int(self.lineEdit_sky_intensity.text()),
+            "ice": int(self.lineEdit_ice_intensity.text()),
+            "land": int(self.lineEdit_land_intensity.text()),
+            "building": int(self.lineEdit_building_intensity.text()),
+            "start_idx": int(self.lineEdit_start_idx.text()),
+            "end_idx": int(self.lineEdit_end_idx.text())
+        }
+        # self.start_idx = int(self.lineEdit_start_idx.text())
+        # self.end_idx = int(self.lineEdit_end_idx.text())
+        # self.sea_intensity = int(self.lineEdit_sea_intensity.text())
+        # self.sky_intesnity = int(self.lineEdit_sky_intensity.text())
+        # self.ice_intensity = int(self.lineEdit_ice_intensity.text())
+        # self.land_intesnity = int(self.lineEdit_land_intensity.text())
+        # self.building_intensity = int(self.lineEdit_building_intensity.text())
 
     def signal_slot_init(self):
         self.lineEdit_start_idx.editingFinished.connect(self.set_img_start_idx)
@@ -66,7 +85,7 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
                 # mode = 0
                 cfg_dict = {
                     "mode": 0,
-                    "idx": [int(self.lineEdit_start_idx.text()), int(self.lineEdit_end_idx.text())],
+                    "idx": [self.real_time_value_record["start_idx"], self.real_time_value_record["end_idx"]],
                     "path": self.rand_mode_path
                 }
                 self.cfg_info_signal_send.emit(cfg_dict)
@@ -79,7 +98,7 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
             if self.sea_path != None  and self.sky_path != None and self.clutter_path != None:
                 cfg_dict = {
                     "mode": 1,
-                    "idx": [int(self.lineEdit_start_idx.text()), int(self.lineEdit_end_idx.text())],
+                    "idx": [self.real_time_value_record["start_idx"], self.real_time_value_record["end_idx"]],
                     "sea": [self.sea_path, int(self.lineEdit_sea_intensity.text())],
                     "sky": [self.sky_path, int(self.lineEdit_sky_intensity.text())],
                     "clutter": [self.clutter_path]
@@ -108,15 +127,19 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
     def rand_mode(self):
         self.radioButton_rand_set.setChecked(True)
         self.widgets_state_change(False)
+        self.clutter_widgets_state_change([False, False, False])
+
         options = QFileDialog.Options()
+        default_path = r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/augment/"
+        if not os.path.exists:
+            default_path = "./"
         directory = QFileDialog.getExistingDirectory(None, "选取文件夹",
-                                                     r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/augment/",
+                                                     default_path,
                                                      options=options)  # 起始路径
         if len(directory) > 0:
             sub_dirs = os.listdir(directory)
             sub_dirs = [i.lower() for i in sub_dirs]
-            certain_dirs = ["clutter", "sea", "sky"]
-            judge_list = [i in sub_dirs for i in certain_dirs]
+            judge_list = [i in sub_dirs for i in bkg_certain_dirs]
             judge = True
             for i in judge_list:
                 judge = judge and i
@@ -137,6 +160,7 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
     def custom_mode(self):
         self.radioButton_custom_set.setChecked(True)
         self.widgets_state_change(True)
+        self.clutter_set_mode()
 
     def clutter_set_mode(self):
         self.clutter_widgets_state_change([self.radioButton_set_ice.isChecked(),
@@ -157,9 +181,6 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
         self.radioButton_set_ice.setEnabled(state)
         self.radioButton_set_land.setEnabled(state)
         self.radioButton_set_buiding.setEnabled(state)
-        self.clutter_widgets_state_change([self.radioButton_set_ice.isChecked(),
-                                           self.radioButton_set_land.isChecked(),
-                                           self.radioButton_set_buiding.isChecked()])
 
     def clutter_widgets_state_change(self, state):
         self.horizontalSlider_ice_intensity.setEnabled(state[0])
@@ -172,8 +193,11 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
 
     def select_file(self):
         options = QFileDialog.Options()
+        default_path = r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/augment/"
+        if not os.path.exists:
+            default_path = "./"
         imgName_list, _ = QFileDialog.getOpenFileNames(self, "选择文件",
-                                                                  r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/augment/",
+                                                                  default_path,
                                                                   "背景图像(*.png)",
                                                                   options=options)
         if len(imgName_list) == 1:
@@ -189,6 +213,7 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
             img = Image.open(self.sea_path)
             cv2.imshow("海", cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR))
             cv2.waitKey()
+
 
     def select_sky(self):
         self.sky_path = self.select_file()
@@ -232,58 +257,100 @@ class IR_bkg_set_class(QWidget, Ui_IR_set_bkg_widget):
                 return number
         except ValueError:
             QMessageBox.about(self, "提示", "只能输入数字（小数会转为整数）")
-            return False
+            return self.real_time_value_record[source]
 
     def set_img_start_idx(self):
-        value = self.lineEdit_start_idx.text()
-        value = self.str_2_int("img_idx", value)
-        if value:
-            if value > int(self.lineEdit_end_idx.text()):
-                value = int(self.lineEdit_end_idx.text())
+        if self.lineEdit_start_idx.isModified():
+            value = self.lineEdit_start_idx.text()
+            if value:
+                value = self.str_2_int("start_idx", value)
+                if value > self.real_time_value_record["end_idx"]:
+                    value = self.real_time_value_record["end_idx"]
+            else:
+                value = self.real_time_value_record["start_idx"]
+
             self.lineEdit_start_idx.setText(str(value))
+            self.real_time_value_record["start_idx"] = value
+        self.lineEdit_start_idx.setModified(False)
 
     def set_img_end_idx(self):
-        value = self.lineEdit_end_idx.text()
-        value = self.str_2_int("img_idx", value)
-        if value:
-            if value < int(self.lineEdit_start_idx.text()):
-                value = int(self.lineEdit_start_idx.text())
+        if self.lineEdit_end_idx.isModified():
+            value = self.lineEdit_end_idx.text()
+            if value:
+                value = self.str_2_int("end_idx", value)
+                if value < self.real_time_value_record["start_idx"]:
+                    value = self.real_time_value_record["start_idx"]
+            else:
+                value = self.real_time_value_record["end_idx"]
+
             self.lineEdit_end_idx.setText(str(value))
+            self.real_time_value_record["end_idx"] = value
+        self.lineEdit_end_idx.setModified(False)
 
     def set_sea_slider_value(self):
-        value = self.lineEdit_sea_intensity.text()
-        value = self.str_2_int("sea", value)
-        if value:
+        if self.lineEdit_sea_intensity.isModified():
+            value = self.lineEdit_sea_intensity.text()
+            if value:
+                value = self.str_2_int("sea", value)
+            else:
+                value = self.real_time_value_record["sea"]
+
             self.lineEdit_sea_intensity.setText(str(value))
             self.horizontalSlider_sea_intensity.setValue(value)
+            self.real_time_value_record["sea"] = value
+        self.lineEdit_sea_intensity.setModified(False)
 
     def set_sky_slider_value(self):
-        value = self.lineEdit_sky_intensity.text()
-        value = self.str_2_int("sky", value)
-        if value:
+        if self.lineEdit_sky_intensity.isModified():
+            value = self.lineEdit_sky_intensity.text()
+            if value:
+                value = self.str_2_int("sky", value)
+            else:
+                value = self.real_time_value_record["sky"]
+
             self.lineEdit_sky_intensity.setText(str(value))
             self.horizontalSlider_sky_intensity.setValue(value)
+            self.real_time_value_record["sky"] = value
+        self.lineEdit_sky_intensity.setModified(False)
 
     def set_ice_slider_value(self):
-        value = self.lineEdit_ice_intensity.text()
-        value = self.str_2_int("ice", value)
-        if value:
+        if self.lineEdit_ice_intensity.isModified():
+            value = self.lineEdit_ice_intensity.text()
+            if value:
+                value = self.str_2_int("ice", value)
+            else:
+                value = self.real_time_value_record["ice"]
+
             self.lineEdit_ice_intensity.setText(str(value))
             self.horizontalSlider_ice_intensity.setValue(value)
+            self.real_time_value_record["ice"] = value
+        self.lineEdit_ice_intensity.setModified(False)
 
     def set_land_slider_value(self):
-        value = self.lineEdit_land_intensity.text()
-        value = self.str_2_int("land", value)
-        if value:
+        if self.lineEdit_land_intensity.isModified():
+            value = self.lineEdit_land_intensity.text()
+            if value:
+                value = self.str_2_int("land", value)
+            else:
+                value = self.real_time_value_record["land"]
+
             self.lineEdit_land_intensity.setText(str(value))
             self.horizontalSlider_land_intensity.setValue(value)
+            self.real_time_value_record["land"] = value
+        self.lineEdit_land_intensity.setModified(False)
 
     def set_building_slider_value(self):
-        value = self.lineEdit_building_intensity.text()
-        value = self.str_2_int("building", value)
-        if value:
+        if self.lineEdit_building_intensity.isModified():
+            value = self.lineEdit_building_intensity.text()
+            if value:
+                value = self.str_2_int("building", value)
+            else:
+                value = self.real_time_value_record["building"]
+
             self.lineEdit_building_intensity.setText(str(value))
             self.horizontalSlider_building_intensity.setValue(value)
+            self.real_time_value_record["building"] = value
+        self.lineEdit_building_intensity.setModified(False)
 
 
 

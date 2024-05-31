@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QWidget, QFileDialog, QGraphicsScene, QButtonGroup, 
 from PyQt5.QtGui import QPixmap, QImage, QPainter
 from PyQt5.QtCore import QThread, Qt
 from img_concat_thread import img_concat
+import os
 
 
 
@@ -24,10 +25,12 @@ class InitForm(QWidget):
         self.set_logo_init()
         self.stacked_ui_init()# 包括了子窗口的实例化
 
-        # 子窗口初始化
+        self.setFixedSize(self.width(), self.height())
+        self.setWindowFlag(Qt.WindowMinimizeButtonHint)
+        self.setWindowFlag(Qt.WindowCloseButtonHint)
         self.ui.pushButton_select_file.clicked.connect(self.select_file_path)
         self.ui.pushButton_change_func.clicked.connect(self.change_func)
-        # print(self.children())
+
 
     # 参数初始化
     def param_init(self):
@@ -114,7 +117,7 @@ class InitForm(QWidget):
         options = QFileDialog.Options()
         if self.func_id == 0:
             imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
-                                                                      "选择文件", "", "图像(*.jpg *.jpeg *.png *.bmp)",
+                                                                      "选择文件", "./", "图像(*.jpg *.jpeg *.png *.bmp)",
                                                                       options=options)
             list_len = len(imgName_list)
 
@@ -129,13 +132,27 @@ class InitForm(QWidget):
                 self.ui.label_show_path.setStyleSheet("color:black;")
                 self.concat_img.recog_imglist_path_signal_recieve.emit(imgName_list)
         elif self.func_id == 1:
-            directory = QFileDialog.getExistingDirectory(None, "选取文件夹", r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/", options=options)  # 起始路径
+            default_path = r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/"
+            if not os.path.exists:
+                default_path = "./"
+            directory = QFileDialog.getExistingDirectory(None, "选取文件夹", default_path, options=options)  # 起始路径
             if len(directory) > 0:
-                self.ui.label_show_path.setText(directory)
-                self.ui.label_show_path.setStyleSheet("color:black;")
-                self.IR_related_subwidget.img_read_root_path = directory
-                self.concat_img.IR_imglist_path_signal_recieve.emit(directory)
-                self.IR_related_subwidget.object_img_root_path_signal_recieve.emit(directory)
+                sub_dirs = os.listdir(directory)
+                sub_dirs = [i.lower() for i in sub_dirs]
+                judge_list = [i in sub_dirs for i in ['images', 'labels']]
+                judge = True
+                for i in judge_list:
+                    judge = judge and i
+                if judge:
+                    self.ui.label_show_path.setText(directory)
+                    self.ui.label_show_path.setStyleSheet("color:black;")
+                    self.IR_related_subwidget.img_read_root_path = directory
+                    self.concat_img.IR_imglist_path_signal_recieve.emit(directory)
+                    self.IR_related_subwidget.object_img_root_path_signal_recieve.emit(directory)
+                else:
+                    self.ui.label_show_path.setText("选中文件夹格式不符合格式：\n"
+                                                         "根文件夹中需要包含以下文件夹：images、labels")
+                    self.ui.label_show_path.setStyleSheet("color:red;")
             else:
                 self.ui.label_show_path.setText("未选中文件夹")
                 self.ui.label_show_path.setStyleSheet("color:red;")
@@ -159,4 +176,5 @@ class InitForm(QWidget):
         # pass
         # self.concat_img_thread.quit()
         self.recog_subwidget.recog_thread.quit()
+        self.IR_related_subwidget.process_thread.quit()
         # print("窗体关闭")

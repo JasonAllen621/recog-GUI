@@ -27,12 +27,12 @@ class img_concat(QObject):
 
     def IR_imgpath_process(self, root_path):
         img_path = os.path.join(root_path, "images")
-        mask_path = os.path.join(root_path, "labels")
-        img_path_select_list = os.listdir(img_path)[-1002:-1000]
+        # mask_path = os.path.join(root_path, "labels")
+        img_path_select_list = os.listdir(img_path)[-1004:-1000]
         img_path_select_list = [os.path.join(img_path, i) for i in img_path_select_list]
-        mask_path_select_list = os.listdir(mask_path)[-1002:-1000]
-        mask_path_select_list = [os.path.join(mask_path, i) for i in mask_path_select_list]
-        image_list = [Image.open(path) for path in img_path_select_list + mask_path_select_list]
+        # mask_path_select_list = os.listdir(mask_path)[-1002:-1000]
+        # mask_path_select_list = [os.path.join(mask_path, i) for i in mask_path_select_list]
+        image_list = [Image.open(path) for path in img_path_select_list]
         self.concat_images(image_list)
 
     def processed_IR_imgs_concat_images(self, image_list):

@@ -5,7 +5,6 @@ from PIL import Image
 import numpy as np
 import pandas as pd
 import contextlib
-from PyQt5.QtWidgets import QWidget, QFileDialog, QMessageBox
 from PyQt5.QtCore import pyqtSignal, QObject
 
 from utils.utils import process_sea, superimpose, process_sky, process_clutter, get_sea_level, get_random_value
@@ -88,7 +87,7 @@ class change_IR_bkg(QObject):
                 for key, item in clutter_intensity_range.items():
                     with contextlib.suppress(TypeError):
                         clustter_intensity[key] = np.random.randint(*item)
-                path = os.path.join(cfg_dict["path"], "sea/horizontal" if sea_level != 0 else "elevated")
+                path = os.path.join(cfg_dict["path"], "sea/horizontal" if sea_level != 0 else "sea/elevated")
                 sea_image = random.choice(os.listdir(path))
                 image = self.add_sea(os.path.join(path, sea_image), image, label, sea_level, sea_intensity)
                 if csv_content.iloc[i].pitch == 0:
@@ -104,7 +103,7 @@ class change_IR_bkg(QObject):
                     clustter_type = random.choice(os.listdir(path))
                     clutter_image = random.choice(os.listdir(os.path.join(path, clustter_type)))
                     image = self.add_clustter(os.path.join(path, f"{clustter_type}/{clutter_image}"), image, label, sea_level, clustter_intensity[clustter_type], clutter_height)
-                    self.processed_img.append(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
+                self.processed_img.append(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
             else:
                 msg_str = ""
                 if not os.path.exists(image_path):

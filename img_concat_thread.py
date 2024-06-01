@@ -1,5 +1,4 @@
 import os.path
-
 from PIL import Image, ImageOps
 from PyQt5.QtCore import pyqtSignal, QObject
 import math
@@ -32,14 +31,14 @@ class img_concat(QObject):
         img_path_select_list = [os.path.join(img_path, i) for i in img_path_select_list]
         # mask_path_select_list = os.listdir(mask_path)[-1002:-1000]
         # mask_path_select_list = [os.path.join(mask_path, i) for i in mask_path_select_list]
-        image_list = [Image.open(path) for path in img_path_select_list]
+        image_list = [Image.open(path).convert("RGB") for path in img_path_select_list]
         self.concat_images(image_list)
 
     def processed_IR_imgs_concat_images(self, image_list):
         self.concat_images(image_list)
 
     def recog_concat_images(self, images_names):
-        images = [Image.open(path) for path in images_names]
+        images = [Image.open(path).convert("RGB") for path in images_names]
         self.concat_images(images)
 
     def concat_images(self, image_list):

@@ -1,9 +1,9 @@
 from ui.main_widght import Ui_main_widget
 from ui.IR_releated_subwidget_instance import IR_related_subwidget_class
 from ui.recog_subwidget_instance import recog_subwidget_class
-from PyQt5.QtWidgets import QWidget, QFileDialog, QGraphicsScene, QButtonGroup, QGraphicsPixmapItem, QTextEdit, QGraphicsView, QStackedLayout
+from PyQt5.QtWidgets import QWidget, QFileDialog, QGraphicsScene, QGraphicsView, QStackedLayout
 from PyQt5.QtGui import QPixmap, QImage, QPainter
-from PyQt5.QtCore import QThread, Qt
+from PyQt5.QtCore import Qt
 from img_concat_thread import img_concat
 import os
 
@@ -117,7 +117,7 @@ class InitForm(QWidget):
         options = QFileDialog.Options()
         if self.func_id == 0:
             imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
-                                                                      "选择文件", "./", "图像(*.jpg *.jpeg *.png *.bmp)",
+                                                                      "选择文件", "./", "图像(*.jpg *.jpeg *.png *.bmp *.tif *.tiff)",
                                                                       options=options)
             list_len = len(imgName_list)
 

@@ -1,9 +1,8 @@
 import torch
 from torchvision import transforms
 from torch import nn, sort, unsqueeze
-import os
 from PyQt5.QtCore import pyqtSignal, QObject
-from model.model import net_cllect, parent_path
+from model.model import net_load, parent_path
 import json
 
 
@@ -14,22 +13,37 @@ with open("./model/classes.json", "r") as f:
 net_list = {
     "OPT": {
         "net": ["RESNEXT50", "DENSENET121", "REGNETY16GF"],
-        # "path": [],
+        "path": [r"model/model/OPT/RESNEXT50/model_epoch71_ACC0.9796_LOSS2.3478.pth",
+                 r"model/model/OPT/DENSENET121/model_epoch172_ACC0.9732_LOSS2.3807.pth",
+                 r"model/model/OPT/REGNETY16GF/model_epoch147_ACC0.9647_LOSS2.3621.pth"],
         "label": len(classes_label_dict["OPT"])
     },
     "SAR": {
         "net": ["RESNEXT50", "DENSENET121", "REGNETY16GF"],
-        # "path": [],
+        "path": [r"model/model/SAR/RESNEXT50/model_epoch42_ACC0.6960_LOSS2.0931.pth",
+                 r"model/model/SAR/DENSENET121/model_epoch90_ACC0.8259_LOSS1.9448.pth",
+                 r"model/model/SAR/REGNETY16GF/model_epoch69_ACC0.8935_LOSS1.9001.pth"],
         "label": len(classes_label_dict["SAR"])
     },
     "INFRAD": {
         "net": ["DENSENET121"],
-        # "path": [],
+        "path": [r"model/model/INFRAD/DENSENET121/model_epoch26_ACC0.9882_LOSS0.7570.pth"],
         "label": len(classes_label_dict["INFRAD"])
     },
 }
 
-model_record_list = []
+trans_dict = {
+    "OPT": transforms.Compose([transforms.Resize((128, 128)),
+                               transforms.ToTensor()]),
+    "SAR": [transforms.Compose([transforms.CenterCrop(300),
+                                transforms.Resize((128, 128)),
+                                transforms.ToTensor()]),
+            transforms.Compose([transforms.Resize((128, 128)),
+                                transforms.ToTensor()])],
+    "INFRAD": transforms.Compose([transforms.CenterCrop(512),
+                                  transforms.Resize((128, 128)),
+                                  transforms.ToTensor()]),
+}
 
 class object_recog(QObject):
     class_n_prob_signal_send = pyqtSignal(list)
@@ -39,27 +53,38 @@ class object_recog(QObject):
 
     def __init__(self):
         super(object_recog, self).__init__()
-        self.net = net_cllect("RESNEXT50", "test", net_list["OPT"]["label"])
+        self.net = net_load("RESNEXT50", net_list["OPT"]["path"][0], net_list["OPT"]["label"])
         self.net_id = ["OPT", 0]
 
-        self.transform = transforms.Compose([
-        transforms.Resize((128, 128)),
-        transforms.ToTensor(),
-    ])
+        self.transform = trans_dict["OPT"]
 
     def net_select(self, source, i):
         if self.net_id == [source, i]:
             pass
         else:
-            self.net = net_cllect(net_list[source]["net"][i], "test", net_list[source]["label"])
+            self.net = net_load(net_list[source]["net"][i], net_list[source]["path"][i], net_list[source]["label"])
             self.net_id = [source, i]
+            self.transform = trans_dict[source]
         # print(self.net_id)
             # self.net.load_state_dict(torch.load())
 
     def trans_pretreat(self, img_list):
-        tensor_list = unsqueeze(self.transform(img_list[0]), 0)
-        for idx in range(1, len(img_list)):
-            tensor_list = torch.concat((tensor_list, unsqueeze(self.transform(img_list[idx]), 0)), dim=0)
+        if self.net_id[0] == "SAR":
+            if img_list[0].size[0] > 300:
+                tensor_list = unsqueeze(self.transform[0](img_list[0]), 0)
+            else:
+                tensor_list = unsqueeze(self.transform[1](img_list[0]), 0)
+
+            for idx in range(1, len(img_list)):
+                if img_list[idx].size[0] > 300:
+                    tensor_temporal = unsqueeze(self.transform[0](img_list[idx]), 0)
+                else:
+                    tensor_temporal = unsqueeze(self.transform[1](img_list[idx]), 0)
+                tensor_list = torch.concat((tensor_list, tensor_temporal), dim=0)
+        else:
+            tensor_list = unsqueeze(self.transform(img_list[0]), 0)
+            for idx in range(1, len(img_list)):
+                tensor_list = torch.concat((tensor_list, unsqueeze(self.transform(img_list[idx]), 0)), dim=0)
         return tensor_list
 
     def recog(self, img):

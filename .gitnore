@@ -1,3 +1,8 @@
-./model/model/*
+./model/model/INFRAD/*
+./model/model/OPT/*
+./model/model/SAR/*
+./model/model/yolov5/weights/*
+./model/model/yolov5_obb/*
+./ pic4detect/data1.mp4
 ./build/*
 ./dist/*

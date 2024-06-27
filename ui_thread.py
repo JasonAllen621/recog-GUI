@@ -1,12 +1,15 @@
+import time
+
 from ui.main_widght import Ui_main_widget
 from ui.IR_releated_subwidget_instance import IR_related_subwidget_class
 from ui.recog_subwidget_instance import recog_subwidget_class
+from ui.detect_subwidget_indtance import detect_subwidget_class
 from PyQt5.QtWidgets import QWidget, QFileDialog, QGraphicsScene, QGraphicsView, QStackedLayout
 from PyQt5.QtGui import QPixmap, QImage, QPainter
 from PyQt5.QtCore import Qt
 from img_concat_thread import img_concat
 import os
-
+import re
 
 
 class InitForm(QWidget):
@@ -29,13 +32,14 @@ class InitForm(QWidget):
         self.setWindowFlag(Qt.WindowMinimizeButtonHint)
         self.setWindowFlag(Qt.WindowCloseButtonHint)
         self.ui.pushButton_select_file.clicked.connect(self.select_file_path)
-        self.ui.pushButton_change_func.clicked.connect(self.change_func)
+        # self.ui.pushButton_change_func.clicked.connect(self.change_func)
 
 
     # 参数初始化
     def param_init(self):
         self.func_id = 0
-        self.func_name_list = ["图像识别", "改变背景"]
+        self.ui.comboBox_select_func.addItems(["图像识别", "改变背景", "图像（流）检测"])
+        self.ui.comboBox_select_func.currentIndexChanged[int].connect(self.change_func)
         # self.ui.frame.setStyleSheet('''QWidget{background-color:#EAEAEF;}''')
         # self.ui.frame.setLineWidth(3)
         # self.ui.frame.setMidLineWidth(2)
@@ -58,12 +62,21 @@ class InitForm(QWidget):
         self.recog_subwidget = recog_subwidget_class()
         # self.recog_subwidget.setParent(self)
         self.IR_related_subwidget = IR_related_subwidget_class()
+        self.IR_related_subwidget.process_func.processed_IR_imgs_signal_send.connect(
+            self.concat_img.processed_IR_imgs_concat_images)
+        self.detect_subwidget = detect_subwidget_class()
+        self.detect_subwidget.detected_img_signal_send.connect(self.loadImage)
+        self.detect_subwidget.detected_info_signal_send.connect(self.detect_info_process)
+        # self.detect_subwidget.vedio_path_signal_receive.connect(self)
         # self.recog_subwidget.setParent(self)
-        self.IR_related_subwidget.process_func.processed_IR_imgs_signal_send.connect(self.concat_img.processed_IR_imgs_concat_images)
-        self.func_list = [self.recog_subwidget, self.IR_related_subwidget]
+
+
+        self.func_list = [self.recog_subwidget, self.IR_related_subwidget, self.detect_subwidget]
         self.frame = QStackedLayout(self.ui.frame)
-        self.frame.addWidget(self.recog_subwidget)
-        self.frame.addWidget(self.IR_related_subwidget)
+        # self.frame.addWidget(self.recog_subwidget)
+        # self.frame.addWidget(self.IR_related_subwidget)
+        for i in self.func_list:
+            self.frame.addWidget(i)
         self.frame.setCurrentIndex(self.func_id)
 
     def graphic_view_init(self):
@@ -82,7 +95,7 @@ class InitForm(QWidget):
         # self.ui.graphicsView 大小500*600
 
     def set_logo_init(self):
-        logo = QPixmap("./ui/logo_gray.jpeg")
+        logo = QPixmap("./ui/logo.png")
         proportion = logo.height() / self.ui.logo_show.height()
         logo.setDevicePixelRatio(proportion)
         self.ui.logo_show.setPixmap(logo)
@@ -103,34 +116,41 @@ class InitForm(QWidget):
             self.ui.graphicsView.scale(0.8, 0.8)
 
     # 改变子窗口功能
-    def change_func(self):
-        self.func_id = self.func_id + 1
-        if self.func_id > 1:
-            self.func_id = 0
-        self.frame.setCurrentIndex(self.func_id)
-        self.ui.label_func_state.setText(f"当前功能：{self.func_name_list[self.func_id]}")
+    def change_func(self, idx):
+        self.func_id = idx
+        # self.func_id = self.func_id + 1
+        # if self.func_id > 1:
+        #     self.func_id = 0
+        self.frame.setCurrentIndex(idx)
+        # self.ui.label_func_state.setText(f"当前功能：{self.func_name_list[self.func_id]}")
+        # self.ui.la
 
     # 选择文件并显示
+    def select_imgs_path(self, options):
+        imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
+                                                             "选择文件", "./",
+                                                             "图像(*.jpg *.jpeg *.png *.bmp *.tif *.tiff)",
+                                                             options=options)
+
+        list_len = len(imgName_list)
+
+        if list_len < 1:
+            self.ui.label_show_path.setText("未选中文件")
+            self.ui.label_show_path.setStyleSheet("color:red;")
+        else:
+            if list_len > 1:
+                self.ui.label_show_path.setText(imgName_list[0] + "等{}个文件".format(len(imgName_list)))
+            else:
+                self.ui.label_show_path.setText(imgName_list[0])
+            self.ui.label_show_path.setStyleSheet("color:black;")
+            self.concat_img.recog_imglist_path_signal_recieve.emit(imgName_list)
+
     def select_file_path(self):
         # chatgpt
         # 点击选择文件的按钮之后，弹出选择路径窗口，选择文件
         options = QFileDialog.Options()
         if self.func_id == 0:
-            imgName_list, imgtype = QFileDialog.getOpenFileNames(self,
-                                                                      "选择文件", "./", "图像(*.jpg *.jpeg *.png *.bmp *.tif *.tiff)",
-                                                                      options=options)
-            list_len = len(imgName_list)
-
-            if list_len < 1:
-                self.ui.label_show_path.setText("未选中文件")
-                self.ui.label_show_path.setStyleSheet("color:red;")
-            else:
-                if list_len > 1:
-                    self.ui.label_show_path.setText(imgName_list[0] + "等{}个文件".format(len(imgName_list)))
-                else:
-                    self.ui.label_show_path.setText(imgName_list[0])
-                self.ui.label_show_path.setStyleSheet("color:black;")
-                self.concat_img.recog_imglist_path_signal_recieve.emit(imgName_list)
+            self.select_imgs_path(options)
         elif self.func_id == 1:
             default_path = r"F:\1A研究生\研究方向\remote_ship\IR\IRship\irships/"
             if not os.path.exists:
@@ -156,11 +176,39 @@ class InitForm(QWidget):
             else:
                 self.ui.label_show_path.setText("未选中文件夹")
                 self.ui.label_show_path.setStyleSheet("color:red;")
+        elif self.func_id == 2:
+            # print(self.detect_subwidget.task_type)
+            if self.detect_subwidget.task_type == 0:
+                self.select_imgs_path(options)
+            else:
+                if not self.detect_subwidget.vedio_playing:
+                    vedioName, _ = QFileDialog.getOpenFileName(self, "选择文件", "./",
+                                                                "视频(*.mp4 *.avi)",
+                                                                options=options)
+
+                    # def contain_chinese(check_str):
+                    #     for ch in check_str:
+                    #         if '\u4e00' <= ch <= '\u9fa5':
+                    #             return True
+                    #     return False
+                    # if contain_chinese(vedioName):
+                    #     self.ui.label_show_path.setText("选择的路径不能包含中文")
+                    #     self.ui.label_show_path.setStyleSheet("color:red;")
+                    # else:
+                    self.detect_subwidget.vedio_path = vedioName
+                    self.ui.label_show_path.setText(vedioName)
+                    self.ui.label_show_path.setStyleSheet("color:black;")
+                    self.detect_subwidget.vedio_path_signal_receive.emit(vedioName)
+                else:
+                    self.ui.label_show_path.setText("视频正在播放，等待播放完毕或停止后选择文件")
+                    self.ui.label_show_path.setStyleSheet("color:red;")
 
 
-    def loadImage(self, concatimg, img_list):
-        self.func_list[self.func_id].img_list = img_list
-        image = self.convertPilToPixmap(concatimg)
+
+    def loadImage(self, showimg, img_list=None):
+        if self.func_id != 2:
+            self.func_list[self.func_id].img_list = img_list
+        image = self.convertPilToPixmap(showimg)
         self.scene.clear()
         self.scene.addPixmap(image)
 
@@ -172,9 +220,17 @@ class InitForm(QWidget):
         pixmap = QPixmap(qimage)
         return pixmap
 
+    def detect_info_process(self, txt_list):
+        content = ''
+        for i in txt_list:
+            content = content + i + "\n"
+        self.detect_subwidget.detected_info_signal_receive.emit(content)
+
     def closeEvent(self, event):
         # pass
         # self.concat_img_thread.quit()
+        self.detect_subwidget.vedio_flag = 2
+        time.sleep(0.5)
         self.recog_subwidget.recog_thread.quit()
         self.IR_related_subwidget.process_thread.quit()
         # print("窗体关闭")

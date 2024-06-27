@@ -17,6 +17,7 @@ class change_IR_bkg(QObject):
 
     def __init__(self):
         super(change_IR_bkg, self).__init__()
+
         pass
 
     def add_sea(self, path, image, label, sea_level, intensity):

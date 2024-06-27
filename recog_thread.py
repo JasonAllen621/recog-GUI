@@ -103,7 +103,7 @@ class object_recog(QObject):
             percentage = nn.functional.softmax(i, dim=1)[0] * 100
 
             if a.shape[0] == 1:
-                class_n_prob = [(self.classes_label_dict[self.net_id[0]][idx], percentage[idx].item()) for idx in indices[0][:2]]
+                class_n_prob = [(self.classes_label_dict[self.net_id[0]][idx], percentage[idx].item()) for idx in indices[0][:1]]
                 # print(class_n_prob)
             else:
                 idx = indices[0][0]

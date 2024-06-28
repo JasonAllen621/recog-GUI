@@ -68,6 +68,8 @@ class change_IR_bkg(QObject):
     def rand_set_bkg(self, csv_path, cfg_dict, object_img_root_path):
         csv_content = pd.read_csv(csv_path)
         self.processed_img = []
+        missed_imgs = []
+        missed_labels = []
         for i in range(cfg_dict["idx"][0] - 1, cfg_dict["idx"][1]):
             image_path = os.path.join(object_img_root_path, f"images/{csv_content.iloc[i].filename}")
             label_path = os.path.join(object_img_root_path, f"labels/{csv_content.iloc[i].labelname}")
@@ -106,20 +108,26 @@ class change_IR_bkg(QObject):
                     image = self.add_clustter(os.path.join(path, f"{clustter_type}/{clutter_image}"), image, label, sea_level, clustter_intensity[clustter_type], clutter_height)
                 self.processed_img.append(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)))
             else:
-                msg_str = ""
+                msg_str = ''
                 if not os.path.exists(image_path):
-                    msg_str = msg_str + f"{image_path} 文件不存在\n"
+                    missed_imgs.append(image_path)
+                    # msg_str = msg_str + f"{image_path} 文件不存在\n"
                 if not os.path.exists(label_path):
-                    msg_str = msg_str + f"{label_path} 文件不存在\n"
-                self.QMessage_signal_send.emit(msg_str)
-        if len(self.processed_img) == 0:
-            self.QMessage_signal_send.emit("配置文件中图像均不存在")
+                    missed_labels.append(label_path)
+                    # msg_str = msg_str + f"{label_path} 文件不存在\n"
+                # self.QMessage_signal_send.emit(msg_str)
+        if len(missed_imgs) != 0:
+            msg_txt = f"图像文件{missed_imgs[0]}{'等' if len(missed_imgs) > 1 else ''} 不存在\n" \
+                      f"掩码文件{missed_labels[0]}{'等' if len(missed_imgs) > 1 else ''} 不存在"
+            self.QMessage_signal_send.emit(msg_txt)
         else:
             self.processed_IR_imgs_signal_send.emit(self.processed_img)
 
     def custom_set_bkg(self, csv_path, cfg_dict, object_img_root_path):
         csv_content = pd.read_csv(csv_path)
         self.processed_img = []
+        missed_imgs = []
+        missed_labels = []
         for i in range(cfg_dict["idx"][0] - 1, cfg_dict["idx"][1]):
             image_path = os.path.join(object_img_root_path, f"images/{csv_content.iloc[i].filename}")
             label_path = os.path.join(object_img_root_path, f"labels/{csv_content.iloc[i].labelname}")
@@ -141,11 +149,15 @@ class change_IR_bkg(QObject):
             else:
                 msg_str = ""
                 if not os.path.exists(image_path):
-                    msg_str = msg_str + f"{image_path} 文件不存在\n"
+                    missed_imgs.append(image_path)
+                    # msg_str = msg_str + f"{image_path} 文件不存在\n"
                 if not os.path.exists(label_path):
-                    msg_str = msg_str + f"{label_path} 文件不存在\n"
-                self.QMessage_signal_send.emit(msg_str)
-        if len(self.processed_img) == 0:
-            self.QMessage_signal_send.emit("配置文件中图像均不存在")
+                    missed_labels.append(label_path)
+                    # msg_str = msg_str + f"{label_path} 文件不存在\n"
+                # self.QMessage_signal_send.emit(msg_str)
+        if len(missed_imgs) != 0:
+            msg_txt = f"图像文件{missed_imgs[0]}{'等' if len(missed_imgs) > 1 else ''} 不存在\n" \
+                      f"掩码文件{missed_labels[0]}{'等' if len(missed_imgs) > 1 else ''} 不存在"
+            self.QMessage_signal_send.emit(msg_txt)
         else:
             self.processed_IR_imgs_signal_send.emit(self.processed_img)

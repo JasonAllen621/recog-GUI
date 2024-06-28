@@ -18,8 +18,6 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
     def __init__(self):
         super(detect_subwidget_class, self).__init__()
         self.setupUi(self)
-        self.radioButton_select_vedio.clicked.connect(self.ui_enable_judge)
-        self.radioButton_select_img.clicked.connect(self.ui_enable_judge)
         # self.radioButton_select_SAR.clicked.connect()
         # self.radioButton_select_OPT.clicked.connect()
         self.task_type = 1 # 0是图像检测，1是视频检测
@@ -28,6 +26,9 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
         self.vedio_path = None
         self.vedio_flag = 2 # 0是播放，1是暂停，2是结束（停止）
         self.vedio_playing = False
+
+        self.radioButton_select_vedio.clicked.connect(self.ui_enable_judge)
+        self.radioButton_select_img.clicked.connect(self.ui_enable_judge)
         self.pushButton_play.clicked.connect(self.vedio_play_flag)
         self.pushButton_pause.clicked.connect(self.vedio_pause_flag)
         self.pushButton_stop.clicked.connect(self.vedio_stop_flag)
@@ -36,8 +37,8 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
         # self.weight_path = r"model\model\yolov5\weights\vl_best.pt"
         self.vedio_path_signal_receive.connect(self.recieve_vedio_path)
         self.detected_info_signal_receive.connect(self.show_txt)
-
         self.radioButton_select_img.setEnabled(False)
+        self.pushButton_start_img_detect.setEnabled(False)
 
         self.thread_detect_init()
 
@@ -59,7 +60,6 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
         self.pushButton_play.setEnabled(not flag)
         self.pushButton_pause.setEnabled(not flag)
         self.pushButton_start_img_detect.setEnabled(flag)
-        self.pushButton_start_img_detect.setEnabled(not flag)
 
     def select_img_source(self):
         if self.radioButton_select_SAR.isChecked():
@@ -76,8 +76,8 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
                 self.vedio_flag = 0
                 # self.vedio_play()
                 detect_thread = threading.Thread(target=self.vedio_play)
-                self.textBrowser_show_state.setText("加载完成")
-                self.textBrowser_show_state.setStyleSheet("color:black;")
+                # self.textBrowser_show_state.setText("加载完成")
+                # self.textBrowser_show_state.setStyleSheet("color:black;")
                 self.label_vedio_ctrl.setText("视频控制：正在播放")
                 detect_thread.start()
             else:
@@ -100,9 +100,11 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
         # self.textBrowser_show_state.setText("检测停止")
 
     def vedio_play(self):
+        # self.detected_info_signal_send.emit(["开始播放了"])
         while True:
             if self.vedio_flag == 0:
                 for out_img, labels in detect(self.vedio_path, self.weight_path):
+                    # self.detected_info_signal_send.emit(["检测中"])
                     out_img = Image.fromarray(cv2.cvtColor(out_img, cv2.COLOR_BGR2RGBA))  # 将BGR颜色空间转换为RGB颜色空间
                     self.detected_img_signal_send.emit(out_img, None)
                     # show_txt(labels)
@@ -118,12 +120,19 @@ class detect_subwidget_class(QWidget, Ui_detect_subwidget):
                                     break
                         if self.vedio_flag == 2:
                             break
+                # self.detected_info_signal_send.emit(["没有进入检测"])
             elif self.vedio_flag == 2:
                 break
         self.vedio_playing = False
+        self.detected_info_signal_send.emit(["stop"])
 
     def show_txt(self, txt):
-        self.textBrowser_show_state.setText(txt)
+        # print(txt)
+        if txt == "stop\n":
+            self.label_vedio_ctrl.setText("视频控制：播放停止")
+        else:
+            self.textBrowser_show_state.setText(txt)
+        self.textBrowser_show_state.setStyleSheet("color:black;")
 
 
 

@@ -70,7 +70,6 @@ class InitForm(QWidget):
         # self.detect_subwidget.vedio_path_signal_receive.connect(self)
         # self.recog_subwidget.setParent(self)
 
-
         self.func_list = [self.recog_subwidget, self.IR_related_subwidget, self.detect_subwidget]
         self.frame = QStackedLayout(self.ui.frame)
         # self.frame.addWidget(self.recog_subwidget)
@@ -80,9 +79,9 @@ class InitForm(QWidget):
         self.frame.setCurrentIndex(self.func_id)
 
     def graphic_view_init(self):
+        self.graphicview_scale_factor = 1
         self.ui.graphicsView.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)  # 设置刷新模式为自动刷新
-        self.scene = QGraphicsScene()  # 创建画布
-        self.ui.graphicsView.setScene(self.scene)  # 把画布添加到窗口
+
         self.ui.graphicsView.show()
         self.ui.graphicsView.setRenderHint(QPainter.Antialiasing)  # 可选，抗锯齿渲染
         self.ui.graphicsView.setDragMode(QGraphicsView.ScrollHandDrag)
@@ -92,6 +91,7 @@ class InitForm(QWidget):
         self.ui.graphicsView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.ui.graphicsView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.ui.graphicsView.wheelEvent = self.graphicview_wheel_Event
+        self.ui.graphicsView.mouseDoubleClickEvent = self.mouseDoubleClickEvent
         # self.ui.graphicsView 大小500*600
 
     def set_logo_init(self):
@@ -100,11 +100,20 @@ class InitForm(QWidget):
         logo.setDevicePixelRatio(proportion)
         self.ui.logo_show.setPixmap(logo)
 
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.graphicview_back2_ori_size()
+
+    def graphicview_back2_ori_size(self):
+        self.ui.graphicsView.scale(1 / self.graphicview_scale_factor, 1 / self.graphicview_scale_factor)
+        self.graphicview_scale_factor = 1
+
     def graphicview_wheel_Event(self, event):
         # https://blog.csdn.net/qq_60947873/article/details/126321522
         if event.modifiers() == Qt.ControlModifier:
             delta = event.angleDelta().y() / 120
             zoom_factor = 1.2 ** delta
+            self.graphicview_scale_factor = self.graphicview_scale_factor * zoom_factor
             self.ui.graphicsView.scale(zoom_factor, zoom_factor)
         else:
             super().wheelEvent(event)
@@ -112,11 +121,16 @@ class InitForm(QWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Plus:  # 按 "+" 键放大图像
             self.ui.graphicsView.scale(1.2, 1.2)
+            self.graphicview_scale_factor = self.graphicview_scale_factor * 1.2
         elif event.key() == Qt.Key_Minus:  # 按 "-" 键缩小图像
             self.ui.graphicsView.scale(0.8, 0.8)
+            self.graphicview_scale_factor = self.graphicview_scale_factor * 0.8
 
     # 改变子窗口功能
     def change_func(self, idx):
+        self.graphicview_back2_ori_size()
+        if self.func_id == 2:
+            self.detect_subwidget.vedio_flag = 2
         self.func_id = idx
         # self.func_id = self.func_id + 1
         # if self.func_id > 1:
@@ -209,8 +223,10 @@ class InitForm(QWidget):
         if self.func_id != 2:
             self.func_list[self.func_id].img_list = img_list
         image = self.convertPilToPixmap(showimg)
-        self.scene.clear()
-        self.scene.addPixmap(image)
+        scene = QGraphicsScene()  # 创建画布
+        self.ui.graphicsView.setScene(scene)  # 把画布添加到窗口
+        scene.clear()
+        scene.addPixmap(image)
 
     # 功能性函数
     def convertPilToPixmap(self, image):

@@ -55,47 +55,57 @@ class CustomGraphicsView(QGraphicsView):
  'light_teal_500.xml',
  'light_yellow.xml']
 '''
-if __name__ == "__main__":
-    # app = QApplication([])
-    # scene = QGraphicsScene()
-    #
-    # # 添加图像到场景中
-    # image = QImage("0000.png")
-    # pixmap = QPixmap.fromImage(image)
-    # scene.addPixmap(pixmap)
-    #
-    # view = CustomGraphicsView()
-    # view.setScene(scene)
-    #
-    # widget = QWidget()
-    # layout = QVBoxLayout(widget)
-    # layout.addWidget(view)
-    # widget.show()
-    #
-    # app.exec()
-    image_path = "ui/logo.jpg"
-    image = Image.open(image_path)
+import os
+import json
 
-    # 将图像转换为 RGBA 模式
-    image = image.convert("RGBA")
+file_type_dict = {
+    "source": [".ui", '.png', '.jpg', '.jpeg', '.pt', '.pth', '.ico', '.pyc'],
+    "file": ['.py']
+}
 
-    # 获取图像的像素数据
-    data = image.getdata()
+def traverse_folder(folder_path, extension, exclude_folders=[]):
+    file_paths = []
 
-    # 创建一个新的像素列表，将白色背景替换为透明
-    new_data = []
-    for item in data:
-        # 判断像素是否为白色
-        if item[:3] >= (235, 235, 235):
-            new_data.append((255, 255, 255, 0))  # 替换为透明
+    for root, dirs, files in os.walk(folder_path):
+        # 排除指定的文件夹
+        dirs[:] = [d for d in dirs if d not in exclude_folders]
+
+        for file in files:
+            if file.endswith(extension):
+                file_paths.append(os.path.join(root, file))
+
+    return file_paths
+
+
+
+# 示例用法
+folder_path = r'F:\1A研究生\实验\for_graduation_pyqt'  # 指定要遍历的文件夹路径
+exclude_folders = ['dist', 'build', 'pic4detect']  # 指定要排除的文件夹列表
+
+file_record_dict = {
+    "source": [],
+    "file": []
+}
+for i in ["source", "file"]:
+    for extension in file_type_dict[i]:
+
+        print(extension)
+        # extension = '.pt'  # 指定文件后缀名
+        file_paths = traverse_folder(folder_path, extension, exclude_folders)
+
+        if i == "source":
+            for file_path in file_paths:
+                a = (file_path, file_path.replace("\\" + file_path.split("\\")[-1], '').replace("F:\\1A研究生\\实验\\for_graduation_pyqt\\", ''))
+                # print(a)
+                file_record_dict[i].append(a)
         else:
-            new_data.append(item)
+            for file_path in file_paths:
+                file_record_dict[i].append(file_path)
+# print(file_record_dict)
 
-    # 更新图像的像素数据
-    image.putdata(new_data)
+with open("./utils/file_path_record.json", "w+", encoding='utf-8') as f:
+    f.write(json.dumps(file_record_dict, indent=4, ensure_ascii=False))
 
-    # 保存处理后的图像
-    image.save("ui/logo.png", format="PNG")
-
-
+for i in file_record_dict["source"]:
+    print(i,',')
 
